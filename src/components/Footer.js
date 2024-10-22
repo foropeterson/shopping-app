@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="footer">
       <div className="footer-content">
         <p className="footer-text">
-          © {new Date().getFullYear()} John'd' software solutions. All rights reserved.
+          © {new Date().getFullYear()} peterson foro software solutions. All rights reserved.
         </p>
         <div className="social-links">
           <a
