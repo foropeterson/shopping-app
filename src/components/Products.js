@@ -166,6 +166,16 @@ const Products = ({ user }) => {
           />
 
           <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="sort-select"
+          >
+            <option value="default">Sort By</option>
+            <option value="price">Price</option>
+            <option value="title">Name</option>
+          </select>
+
+          <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="category-select"
@@ -284,7 +294,7 @@ const Signup = ({ setUser }) => {
         <button type="submit">Signup</button>
       </form>
       <p>
-        Already have an account? <Link to="/login">Login</Link>
+        Already have an account? <Link to="/login">Login here</Link>
       </p>
     </div>
   );
@@ -298,18 +308,22 @@ const Login = ({ setUser }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+
+    console.log("Saved User:", savedUser); // Check the stored user data
+
     if (
-      storedUser &&
-      storedUser.email === email &&
-      storedUser.password === password
+      !savedUser ||
+      savedUser.email !== email ||
+      savedUser.password !== password
     ) {
-      setUser({ username: storedUser.username, email: storedUser.email });
-      toast.success("Login successful!");
-      navigate("/");
-    } else {
-      toast.error("Invalid email or password");
+      toast.error("Invalid login credentials");
+      return;
     }
+
+    setUser(savedUser);
+    toast.success("Login successful!");
+    navigate("/"); // Redirect to home
   };
 
   return (
@@ -333,15 +347,14 @@ const Login = ({ setUser }) => {
         <button type="submit">Login</button>
       </form>
       <p>
-        Don't have an account? <Link to="/signup">Signup</Link>
+        Don't have an account? <Link to="/signup">Sign up here</Link>
       </p>
     </div>
   );
 };
-
-// ProductDetail Component
+// Product Detail Component
 const ProductDetail = () => {
-  const { id } = useParams();
+  const { productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -350,7 +363,7 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const response = await axios.get(
-          `https://fakestoreapi.com/products/${id}`
+          `https://fakestoreapi.com/products/${productId}`
         );
         setProduct(response.data);
       } catch (err) {
@@ -359,26 +372,22 @@ const ProductDetail = () => {
         setLoading(false);
       }
     };
-
     fetchProduct();
-  }, [id]);
+  }, [productId]);
 
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return product ? (
     <div className="product-detail">
-      <img src={product.image} alt={product.title} className="detail-image" />
+      <img src={product.image} alt={product.title} className="product-image" />
       <h2>{product.title}</h2>
       <p>{product.description}</p>
       <p>Price: KSh {product.price.toFixed(2)}</p>
       <p>Category: {product.category}</p>
-      <Link to="/" className="back-btn">
-        Back to Products
-      </Link>
     </div>
   ) : (
-    <div className="no-product">Product not found.</div>
+    <div>Product not found</div>
   );
 };
 
@@ -389,28 +398,42 @@ const App = () => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    toast.info("Logged out successfully!");
+  };
+
   return (
     <Router>
       <div className="app">
-        <header className="header">
-          <h1>Online Store</h1>
-          {user ? (
-            <div className="welcome">
-              Welcome, {user.username}!{" "}
-              <button onClick={() => setUser(null)}>Logout</button>
-            </div>
+        <nav>
+          <Link to="/" className="nav-link">
+            Home
+          </Link>
+          {!user ? (
+            <>
+              <Link to="/login" className="nav-link">
+                Login
+              </Link>
+              <Link to="/signup" className="nav-link">
+                Signup
+              </Link>
+            </>
           ) : (
-            <div className="auth-links">
-              <Link to="/login">Login</Link>
-              <Link to="/signup">Signup</Link>
-            </div>
+            <>
+              <Link to="/products" className="nav-link">
+                Products
+              </Link>
+            </>
           )}
-        </header>
+        </nav>
+
         <Routes>
           <Route path="/" element={<Products user={user} />} />
-          <Route path="/signup" element={<Signup setUser={setUser} />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/signup" element={<Signup setUser={setUser} />} />
+          <Route path="/product/:productId" element={<ProductDetail />} />
         </Routes>
       </div>
     </Router>
